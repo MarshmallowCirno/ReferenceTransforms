@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Reference Transforms",
     "author": "Cirno",
-    "version": (1, 0),
-    "blender": (3, 3, 1),
+    "version": (1, 1),
+    "blender": (4, 0, 0),
     "location": "Shortcuts in the addon preferences",
     "description": "Adjust camera background image scale, offset and rotation",
     "warning": "",

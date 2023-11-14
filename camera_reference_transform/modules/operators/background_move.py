@@ -12,7 +12,7 @@ from ...package import get_preferences
 from ..properties import ModalKeyMapItem
 from ..utils.modal import event_match_kmi
 
-shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+shader = gpu.shader.from_builtin('UNIFORM_COLOR')
 
 
 class CAMERA_OT_background_move(bpy.types.Operator):
