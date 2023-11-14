@@ -1,4 +1,4 @@
-# ReferenceTransforms
+# Reference Transforms
 
 Blender add-on for moving, scaling and rotating camera background reference images in 3D viewport using shortcuts.
 
