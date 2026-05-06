@@ -1,0 +1,42 @@
+[project]
+name = "camera_reference_transform"
+version = "1.1"
+description = "Adjust camera background image scale, offset and rotation"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "MarshmallowCirno", email = "marshmallowcirno@gmail.com" },
+]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.39.3",
+    "fake-bpy-module>=20260426",
+    "pylint>=4.0.5",
+    "ruff>=0.15.12",
+]
+
+[tool.pylint.basic]
+good-names = ["v", "e", "f", "c", "ob", "me", "bm"]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.messages_control]
+disable = [
+    "C0103"  # Disable class name convention warning
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.pyright]
+include = ["camera_reference_transform"]
+exclude = ["**/__pycache__"]
+typeCheckingMode = "strict"
+reportUnknownMemberType = false
+reportMissingModuleSource = false
