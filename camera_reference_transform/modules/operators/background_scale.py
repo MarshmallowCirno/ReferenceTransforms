@@ -1,12 +1,10 @@
 from typing import Optional
 
 import bpy
-from bpy.types import CameraBackgroundImage
-from bpy.types import Object
 
-from ...package import get_preferences
-from ..properties import ModalKeyMapItem
-from ..utils.modal import event_match_kmi
+from ... import package
+from . import properties
+from .utils import modal
 
 
 class CAMERA_OT_background_scale(bpy.types.Operator):
@@ -23,10 +21,10 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
         return ob and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
 
     def __init__(self):
-        self.cam: Optional[Object] = None
-        self.bg: Optional[CameraBackgroundImage] = None
+        self.cam: Optional[bpy.types.Object] = None
+        self.bg: Optional[bpy.types.CameraBackgroundImage] = None
 
-        self.keymap_items: ModalKeyMapItem = get_preferences().keymaps["modal"].keymap_items
+        self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
 
         self.last_mouse_x: int = 0
 
@@ -66,10 +64,7 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
         flip_y_key = self.keymap_items["flip_y"].type
 
         status_text = (
-            f"LMB, ENTER: Confirm | "
-            f"RMB, ESC: Cancel | "
-            f"{flip_x_key}: Flip Horizontally | "
-            f"{flip_y_key}: Flip Vertically"
+            f"LMB, ENTER: Confirm | RMB, ESC: Cancel | {flip_x_key}: Flip Horizontally | {flip_y_key}: Flip Vertically"
         )
         context.workspace.status_text_set(status_text)
 
@@ -83,11 +78,13 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
             offset = mouse_offset_x / divisor
             self.bg_scale_float += offset
 
-            if event.ctrl or (context.scene.tool_settings.use_snap
-                              and context.scene.tool_settings.use_snap_scale
-                              and context.scene.tool_settings.snap_elements == 'INCREMENT'
-                              and not event.ctrl):
-                rounded = round(self.bg_scale_float / .1) * .1
+            if event.ctrl or (
+                context.scene.tool_settings.use_snap
+                and context.scene.tool_settings.use_snap_scale
+                and context.scene.tool_settings.snap_elements == 'INCREMENT'
+                and not event.ctrl
+            ):
+                rounded = round(self.bg_scale_float / 0.1) * 0.1
                 if self.bg.scale != rounded:
                     new_scale = max(rounded, 0.01)
                     self.bg.scale = new_scale
@@ -100,10 +97,10 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
             self.last_mouse_x = event.mouse_region_x
 
         if event.value == 'PRESS':
-            if event_match_kmi(self, event, "flip_x"):
+            if modal.event_match_kmi(self, event, "flip_x"):
                 self.bg.use_flip_x = not self.bg.use_flip_x
 
-            elif event_match_kmi(self, event, "flip_y"):
+            elif modal.event_match_kmi(self, event, "flip_y"):
                 self.bg.use_flip_y = not self.bg.use_flip_y
 
             elif event.type in ('ESC', 'RIGHTMOUSE'):
@@ -131,18 +128,18 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
         context.window.cursor_modal_restore()
 
 
-classes = (
-    CAMERA_OT_background_scale,
-)
+classes = (CAMERA_OT_background_scale,)
 
 
 def register():
     from bpy.utils import register_class
+
     for cls in classes:
         register_class(cls)
 
 
 def unregister():
     from bpy.utils import unregister_class
+
     for cls in reversed(classes):
         unregister_class(cls)

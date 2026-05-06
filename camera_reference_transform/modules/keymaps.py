@@ -1,14 +1,14 @@
 import bpy
 
-from ..package import get_preferences
+from .. import package
 
 addon_keymaps = []
 
 
 def register_modal_keymap():
-    modal_keymap = get_preferences().keymaps.get("modal")
+    modal_keymap = package.get_preferences().keymaps.get("modal")
     if modal_keymap is None:
-        modal_keymap = get_preferences().keymaps.add()
+        modal_keymap = package.get_preferences().keymaps.add()
         modal_keymap.name = "modal"
 
         keymap_items = modal_keymap.keymap_items

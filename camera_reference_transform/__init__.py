@@ -7,8 +7,7 @@ bl_info = {
     "description": "Adjust camera background image scale, offset and rotation",
     "warning": "",
     "doc_url": "https://gumroad.com/l/rfstk",
-    "tracker_url": "https://blenderartists.org/t/references-matching-setting-transforms-and-opacity-of-backgroud"
-                   "-images/1417682",
+    "tracker_url": "https://blenderartists.org/t/references-matching-setting-transforms-and-opacity-of-backgroud-images/1417682",
     "category": "Camera",
 }
 
@@ -35,12 +34,8 @@ if "bpy" in locals():
             if module in locals():
                 importlib.reload(locals()[module])
 else:
-    from .modules import properties
-    from .modules import preferences
-    from .modules.operators import background_move
-    from .modules.operators import background_rotate
-    from .modules.operators import background_scale
-    from .modules import keymaps
+    from .modules import keymaps, preferences, properties
+    from .modules.operators import background_move, background_rotate, background_scale
 
 
 import bpy

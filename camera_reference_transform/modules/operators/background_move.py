@@ -2,15 +2,12 @@ from typing import Optional
 
 import bpy
 import gpu
-from bpy.types import CameraBackgroundImage
-from bpy.types import Object
-from gpu.types import GPUBatch
-from gpu_extras.batch import batch_for_shader
-from mathutils import Matrix, Vector
+import gpu_extras
+import mathutils
 
-from ...package import get_preferences
-from ..properties import ModalKeyMapItem
-from ..utils.modal import event_match_kmi
+from ... import package
+from .. import properties
+from ..utils import modal
 
 shader = gpu.shader.from_builtin('UNIFORM_COLOR')
 
@@ -39,10 +36,10 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         return ob and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
 
     def __init__(self):
-        self.cam: Optional[Object] = None
-        self.bg: Optional[CameraBackgroundImage] = None
+        self.cam: Optional[bpy.types.Object] = None
+        self.bg: Optional[bpy.types.CameraBackgroundImage] = None
 
-        self.keymap_items: ModalKeyMapItem = get_preferences().keymaps["modal"].keymap_items
+        self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
 
         self.last_mouse_x: int = 0
         self.last_mouse_y: int = 0
@@ -56,7 +53,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         self.init_bg_flip_y: bool = False
 
         self.handler: object = None
-        self.batch: Optional[GPUBatch] = None
+        self.batch: Optional[gpu.types.GPUBatch] = None
 
     def invoke(self, context, event):
         self.cam = context.object
@@ -113,12 +110,14 @@ class CAMERA_OT_background_move(bpy.types.Operator):
             self.bg_offset_x_float += move_offset_x
             self.bg_offset_y_float += move_offset_y
 
-            if event.ctrl or (context.scene.tool_settings.use_snap
-                              and context.scene.tool_settings.use_snap_scale
-                              and context.scene.tool_settings.snap_elements == 'INCREMENT'
-                              and not event.ctrl):
-                rounded_x = round(self.bg_offset_x_float / .01) * .01
-                rounded_y = round(self.bg_offset_y_float / .01) * .01
+            if event.ctrl or (
+                context.scene.tool_settings.use_snap
+                and context.scene.tool_settings.use_snap_scale
+                and context.scene.tool_settings.snap_elements == 'INCREMENT'
+                and not event.ctrl
+            ):
+                rounded_x = round(self.bg_offset_x_float / 0.01) * 0.01
+                rounded_y = round(self.bg_offset_y_float / 0.01) * 0.01
                 if self.bg.offset[0] != rounded_x:
                     self.bg.offset[0] = rounded_x
                 if self.bg.offset[1] != rounded_y:
@@ -136,7 +135,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
             if event.type == 'MIDDLEMOUSE':
                 self.constraint_axis = (False, False)
 
-            if event_match_kmi(self, event, "constraint_y"):
+            if modal.event_match_kmi(self, event, "constraint_y"):
                 if self.constraint_axis == (True, False):
                     self.constraint_axis = (False, False)
                     context.window.cursor_modal_set('HAND')
@@ -147,7 +146,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
                 self.build_shader_batch()
                 context.area.tag_redraw()
 
-            elif event_match_kmi(self, event, "constraint_x"):
+            elif modal.event_match_kmi(self, event, "constraint_x"):
                 if self.constraint_axis == (False, True):
                     self.constraint_axis = (False, False)
                     context.window.cursor_modal_set('HAND')
@@ -158,10 +157,10 @@ class CAMERA_OT_background_move(bpy.types.Operator):
                 self.build_shader_batch()
                 context.region.tag_redraw()
 
-            elif event_match_kmi(self, event, "flip_x"):
+            elif modal.event_match_kmi(self, event, "flip_x"):
                 self.bg.use_flip_x = not self.bg.use_flip_x
 
-            elif event_match_kmi(self, event, "flip_y"):
+            elif modal.event_match_kmi(self, event, "flip_y"):
                 self.bg.use_flip_y = not self.bg.use_flip_y
 
             elif event.type in ('ESC', 'RIGHTMOUSE'):
@@ -190,13 +189,13 @@ class CAMERA_OT_background_move(bpy.types.Operator):
     def build_shader_batch(self):
 
         def get_offset_co(mx, offset):
-            offset_vec = Vector(offset)
-            offset_mx = mx @ Matrix.Translation(offset_vec)
+            offset_vec = mathutils.Vector(offset)
+            offset_mx = mx @ mathutils.Matrix.Translation(offset_vec)
             offset_co = offset_mx.translation
             return offset_co
 
-        draw_offset = Vector((0, 0, -2))
-        draw_center_mx = self.cam.matrix_world @ Matrix.Translation(draw_offset)
+        draw_offset = mathutils.Vector((0, 0, -2))
+        draw_center_mx = self.cam.matrix_world @ mathutils.Matrix.Translation(draw_offset)
 
         if self.constraint_axis[0]:
             draw_y_pos = get_offset_co(draw_center_mx, (0, 100, 0))
@@ -209,7 +208,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         else:
             return
 
-        self.batch = batch_for_shader(shader, 'LINES', {"pos": co})
+        self.batch = gpu_extras.batch.batch_for_shader(shader, 'LINES', {"pos": co})
 
     def draw_constraint(self):
         if self.constraint_axis[0]:
@@ -224,18 +223,18 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         self.batch.draw(shader)
 
 
-classes = (
-    CAMERA_OT_background_move,
-)
+classes = (CAMERA_OT_background_move,)
 
 
 def register():
     from bpy.utils import register_class
+
     for cls in classes:
         register_class(cls)
 
 
 def unregister():
     from bpy.utils import unregister_class
+
     for cls in reversed(classes):
         unregister_class(cls)

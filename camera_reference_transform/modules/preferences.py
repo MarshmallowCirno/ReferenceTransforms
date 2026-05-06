@@ -1,15 +1,14 @@
 import bpy
 import rna_keymap_ui
 
-from .keymaps import addon_keymaps
-from .properties import AddonKeyMap
-from ..package import get_addon_name
+from .. import package
+from . import keymaps, properties
 
 
 class ModalBackgroundTransform(bpy.types.AddonPreferences):
-    bl_idname = get_addon_name()
+    bl_idname = package.get_addon_name()
 
-    keymaps: bpy.props.CollectionProperty(type=AddonKeyMap)
+    keymaps: bpy.props.CollectionProperty(type=properties.AddonKeyMap)
 
     def draw(self, context):
         layout = self.layout
@@ -17,13 +16,15 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
         box = layout.box()
         col = box.column(align=True)
         col.label(text="How to Use:")
-        col.label(text="Activate a camera with a background, select it, use addon shortcuts and move "
-                       "the mouse in horizontal directions.")
+        col.label(
+            text="Activate a camera with a background, select it, use addon shortcuts and move "
+            "the mouse in horizontal directions."
+        )
 
         box = layout.box()
         col = box.column(align=True)
         col.label(text="Shortcuts for operators:")
-        self.draw_keymap_items(col, "Object Mode", addon_keymaps, False)
+        self.draw_keymap_items(col, "Object Mode", keymaps.addon_keymaps, False)
 
         box = layout.box()
         col = box.column(align=True)
@@ -43,8 +44,7 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
         if allow_remove:
             col.context_pointer_set("keymap", km)
 
-        kmis = [kmi for kmi in km.keymap_items if
-                kmi.idname in kmi_idnames]
+        kmis = [kmi for kmi in km.keymap_items if kmi.idname in kmi_idnames]
         for kmi in kmis:
             rna_keymap_ui.draw_kmi(['ADDON', 'USER', 'DEFAULT'], kc, km, kmi, col, 0)
 
@@ -64,18 +64,18 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
                 row.prop(kmi, "shift", text='Shift', toggle=True)
 
 
-classes = (
-    ModalBackgroundTransform,
-)
+classes = (ModalBackgroundTransform,)
 
 
 def register():
     from bpy.utils import register_class
+
     for cls in classes:
         register_class(cls)
 
 
 def unregister():
     from bpy.utils import unregister_class
+
     for cls in reversed(classes):
         unregister_class(cls)
