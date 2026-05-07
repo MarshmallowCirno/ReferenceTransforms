@@ -34,11 +34,9 @@ if "bpy" in locals():
             if module in locals():
                 importlib.reload(locals()[module])
 else:
-    from .modules import keymaps, preferences, properties
-    from .modules.operators import background_move, background_rotate, background_scale
-
-
-import bpy
+    from .operators import background_move, background_rotate, background_scale, keymaps
+    from .preferences import addon_preferences
+    from .properties import properties
 
 
 def register():

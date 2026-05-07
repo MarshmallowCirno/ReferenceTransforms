@@ -2,9 +2,10 @@ from typing import TYPE_CHECKING, Any
 
 import bpy
 
-from ... import package
-from .. import properties
-from ..utils import modal
+from camera_reference_transform import package
+
+from ...properties import properties
+from . import modal_utils
 
 if TYPE_CHECKING:
     from bpy.stub_internal.rna_enums import OperatorReturnItems

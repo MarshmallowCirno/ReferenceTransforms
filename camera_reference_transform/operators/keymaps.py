@@ -1,6 +1,6 @@
 import bpy
 
-from .. import package
+from camera_reference_transform import package
 
 addon_keymaps: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]] = []
 

@@ -1,10 +1,12 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import bpy
 import rna_keymap_ui
 
-from .. import package
-from . import keymaps, properties
+from camera_reference_transform import package
+
+from ..operators import keymaps
+from ..properties import properties
 
 
 class ModalBackgroundTransform(bpy.types.AddonPreferences):
