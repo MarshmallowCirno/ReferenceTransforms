@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import bpy
 
@@ -24,7 +24,10 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
         space = context.space_data
         return ob is not None and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
 
-    def __init__(self):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if bpy.app.version >= (4, 4, 0):
+            super().__init__(*args, **kwargs)
+
         self.bg: bpy.types.CameraBackgroundImage | None = None
 
         self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
