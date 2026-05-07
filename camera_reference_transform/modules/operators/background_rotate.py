@@ -1,11 +1,14 @@
 import math
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import bpy
 
 from ... import package
 from .. import properties
 from ..utils import modal
+
+if TYPE_CHECKING:
+    from bpy.stub_internal.rna_enums import OperatorReturnItems
 
 
 class CAMERA_OT_background_rotate(bpy.types.Operator):
@@ -16,14 +19,13 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'GRAB_CURSOR', 'BLOCKING'}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         ob = context.object
         space = context.space_data
-        return ob and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
+        return ob is not None and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
 
     def __init__(self):
-        self.cam: Optional[bpy.types.Object] = None
-        self.bg: Optional[bpy.types.CameraBackgroundImage] = None
+        self.bg: bpy.types.CameraBackgroundImage | None = None
 
         self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
 
@@ -31,15 +33,18 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
 
         self.bg_rotation_float: float = 0
 
-        self.init_bg_rotation: int = 0
+        self.init_bg_rotation: float = 0
         self.init_bg_offset_x: int = 0
         self.init_bg_offset_y: int = 0
         self.init_bg_flip_x: bool = False
         self.init_bg_flip_y: bool = False
 
-    def invoke(self, context, event):
-        self.cam = context.object
-        cam_backgrounds = [bg for bg in self.cam.data.background_images if bg.image and bg.show_background_image]
+    def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set["OperatorReturnItems"]:
+        cam_ob = context.object
+        assert cam_ob is not None and cam_ob.type == 'CAMERA'
+        assert isinstance(cam_ob.data, bpy.types.Camera)
+
+        cam_backgrounds = [bg for bg in cam_ob.data.background_images if bg.image and bg.show_background_image]
         if not any(cam_backgrounds):
             self.report({'WARNING'}, "No visible backgrounds")
             return {'CANCELLED'}
@@ -57,7 +62,7 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
-    def redraw_status(self, context) -> None:
+    def redraw_status(self, context: bpy.types.Context) -> None:
         """Draw shortcuts in the status."""
         flip_x_key = self.keymap_items["flip_x"].type
         flip_y_key = self.keymap_items["flip_y"].type
@@ -67,7 +72,8 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
         )
         context.workspace.status_text_set(status_text)
 
-    def modal(self, context, event):
+    def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set["OperatorReturnItems"]:
+        assert self.bg is not None
 
         if event.type == 'MOUSEMOVE':
             mouse_x = event.mouse_region_x
@@ -112,12 +118,13 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def undo_changes(self):
+        assert self.bg is not None
         self.bg.rotation = self.init_bg_rotation
         self.bg.use_flip_x = self.init_bg_flip_x
         self.bg.use_flip_y = self.init_bg_flip_y
 
     @staticmethod
-    def finish_modal(context):
+    def finish_modal(context: bpy.types.Context):
         context.area.header_text_set(text=None)
         context.workspace.status_text_set(text=None)
         context.window.cursor_modal_restore()

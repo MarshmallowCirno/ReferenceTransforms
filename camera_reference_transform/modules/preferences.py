@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, cast
+
 import bpy
 import rna_keymap_ui
 
@@ -7,10 +9,12 @@ from . import keymaps, properties
 
 class ModalBackgroundTransform(bpy.types.AddonPreferences):
     bl_idname = package.get_addon_name()
+    if TYPE_CHECKING:
+        keymaps: bpy.types.bpy_prop_collection_idprop[properties.AddonKeyMap]
+    else:
+        keymaps: bpy.props.CollectionProperty(type=properties.AddonKeyMap)
 
-    keymaps: bpy.props.CollectionProperty(type=properties.AddonKeyMap)
-
-    def draw(self, context):
+    def draw(self, _context: bpy.types.Context):
         layout = self.layout
 
         box = layout.box()
@@ -37,7 +41,12 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
         self.draw_modal_keymap_items(keymap_items=keymap_items, tag="Reset", column=col)
 
     @staticmethod
-    def draw_keymap_items(col, km_name, keymap, allow_remove):
+    def draw_keymap_items(
+        col: bpy.types.UILayout,
+        km_name: str,
+        keymap: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]],
+        allow_remove: bool = False,
+    ):
         kc = bpy.context.window_manager.keyconfigs.user
         km = kc.keymaps.get(km_name)
         kmi_idnames = [km_tuple[1].idname for km_tuple in keymap]
@@ -49,7 +58,7 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
             rna_keymap_ui.draw_kmi(['ADDON', 'USER', 'DEFAULT'], kc, km, kmi, col, 0)
 
     @staticmethod
-    def draw_modal_keymap_items(keymap_items, tag, column):
+    def draw_modal_keymap_items(keymap_items: bpy.types.KeyMapItems, tag: str, column: bpy.types.UILayout):
 
         for kmi in keymap_items.values():
             if kmi.tag == tag:

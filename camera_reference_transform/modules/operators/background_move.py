@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import bpy
 import gpu
@@ -8,6 +8,9 @@ import mathutils
 from ... import package
 from .. import properties
 from ..utils import modal
+
+if TYPE_CHECKING:
+    from bpy.stub_internal.rna_enums import OperatorReturnItems
 
 shader = gpu.shader.from_builtin('UNIFORM_COLOR')
 
@@ -19,25 +22,27 @@ class CAMERA_OT_background_move(bpy.types.Operator):
     bl_label = "Move Camera Background"
     bl_options = {'REGISTER', 'UNDO', 'GRAB_CURSOR', 'BLOCKING'}
 
-    # noinspection PyTypeChecker
-    constraint_axis: bpy.props.BoolVectorProperty(
-        name="Constraint axis",
-        description="Axis to constraint background movement",
-        subtype='XYZ',
-        size=2,
-        default=(False, False),
-        options={'SKIP_SAVE'},
-    )
+    if TYPE_CHECKING:
+        constraint_axis: tuple[bool, bool]
+    else:
+        constraint_axis: bpy.props.BoolVectorProperty(
+            name="Constraint axis",
+            description="Axis to constraint background movement",
+            subtype='XYZ',
+            size=2,
+            default=(False, False),
+            options={'SKIP_SAVE'},
+        )
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         ob = context.object
         space = context.space_data
-        return ob and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
+        return ob is not None and ob.type == 'CAMERA' and space.region_3d.view_perspective == 'CAMERA'
 
     def __init__(self):
-        self.cam: Optional[bpy.types.Object] = None
-        self.bg: Optional[bpy.types.CameraBackgroundImage] = None
+        self.cam: bpy.types.Object | None = None
+        self.bg: bpy.types.CameraBackgroundImage | None = None
 
         self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
 
@@ -47,17 +52,20 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         self.bg_offset_x_float: float = 0
         self.bg_offset_y_float: float = 0
 
-        self.init_bg_offset_x: int = 0
-        self.init_bg_offset_y: int = 0
+        self.init_bg_offset_x: float = 0
+        self.init_bg_offset_y: float = 0
         self.init_bg_flip_x: bool = False
         self.init_bg_flip_y: bool = False
 
         self.handler: object = None
-        self.batch: Optional[gpu.types.GPUBatch] = None
+        self.batch: gpu.types.GPUBatch | None = None
 
-    def invoke(self, context, event):
-        self.cam = context.object
-        cam_backgrounds = [bg for bg in self.cam.data.background_images if bg.image and bg.show_background_image]
+    def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set["OperatorReturnItems"]:
+        cam_ob = context.object
+        assert cam_ob is not None and cam_ob.type == 'CAMERA'
+        assert isinstance(cam_ob.data, bpy.types.Camera)
+
+        cam_backgrounds = [bg for bg in cam_ob.data.background_images if bg.image and bg.show_background_image]
         if not any(cam_backgrounds):
             self.report({'WARNING'}, "No visible backgrounds")
             return {'CANCELLED'}
@@ -79,7 +87,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
-    def redraw_status(self, context) -> None:
+    def redraw_status(self, context: bpy.types.Context) -> None:
         """Draw shortcuts in the status."""
         flip_x_key = self.keymap_items["flip_x"].type
         flip_y_key = self.keymap_items["flip_y"].type
@@ -96,7 +104,8 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         )
         context.workspace.status_text_set(status_text)
 
-    def modal(self, context, event):
+    def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set["OperatorReturnItems"]:
+        assert self.bg is not None
 
         if event.type == 'MOUSEMOVE':
             mouse_x = event.mouse_region_x
@@ -175,12 +184,13 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def undo_changes(self):
+        assert self.bg is not None
         self.bg.offset[0] = self.init_bg_offset_x
         self.bg.offset[1] = self.init_bg_offset_y
         self.bg.use_flip_x = self.init_bg_flip_x
         self.bg.use_flip_y = self.init_bg_flip_y
 
-    def finish_modal(self, context):
+    def finish_modal(self, context: bpy.types.Context):
         context.area.header_text_set(text=None)
         context.workspace.status_text_set(text=None)
         context.space_data.draw_handler_remove(self.handler, 'WINDOW')

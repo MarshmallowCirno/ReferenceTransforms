@@ -2,7 +2,7 @@ import bpy
 
 from .. import package
 
-addon_keymaps = []
+addon_keymaps: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]] = []
 
 
 def register_modal_keymap():
