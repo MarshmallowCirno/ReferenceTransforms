@@ -7,7 +7,7 @@ import mathutils
 
 from camera_reference_transform import package
 
-from ...properties import properties
+from ..preferences import properties
 from . import modal_utils
 
 if TYPE_CHECKING:
@@ -148,7 +148,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
             if event.type == 'MIDDLEMOUSE':
                 self.constraint_axis = (False, False)
 
-            if modal.event_match_kmi(self, event, "constraint_y"):
+            if modal_utils.event_match_kmi(self, event, "constraint_y"):
                 if self.constraint_axis == (True, False):
                     self.constraint_axis = (False, False)
                     context.window.cursor_modal_set('HAND')
@@ -159,7 +159,7 @@ class CAMERA_OT_background_move(bpy.types.Operator):
                 self.build_shader_batch()
                 context.area.tag_redraw()
 
-            elif modal.event_match_kmi(self, event, "constraint_x"):
+            elif modal_utils.event_match_kmi(self, event, "constraint_x"):
                 if self.constraint_axis == (False, True):
                     self.constraint_axis = (False, False)
                     context.window.cursor_modal_set('HAND')
@@ -170,10 +170,10 @@ class CAMERA_OT_background_move(bpy.types.Operator):
                 self.build_shader_batch()
                 context.region.tag_redraw()
 
-            elif modal.event_match_kmi(self, event, "flip_x"):
+            elif modal_utils.event_match_kmi(self, event, "flip_x"):
                 self.bg.use_flip_x = not self.bg.use_flip_x
 
-            elif modal.event_match_kmi(self, event, "flip_y"):
+            elif modal_utils.event_match_kmi(self, event, "flip_y"):
                 self.bg.use_flip_y = not self.bg.use_flip_y
 
             elif event.type in ('ESC', 'RIGHTMOUSE'):
@@ -235,20 +235,3 @@ class CAMERA_OT_background_move(bpy.types.Operator):
         shader.bind()
         shader.uniform_float("color", color)
         self.batch.draw(shader)
-
-
-classes = (CAMERA_OT_background_move,)
-
-
-def register():
-    from bpy.utils import register_class
-
-    for cls in classes:
-        register_class(cls)
-
-
-def unregister():
-    from bpy.utils import unregister_class
-
-    for cls in reversed(classes):
-        unregister_class(cls)

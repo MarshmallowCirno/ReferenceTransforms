@@ -6,7 +6,7 @@ import rna_keymap_ui
 from camera_reference_transform import package
 
 from ..operators import keymaps
-from ..properties import properties
+from . import properties
 
 
 class ModalBackgroundTransform(bpy.types.AddonPreferences):
@@ -73,20 +73,3 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
                 row.prop(kmi, "alt", text='Alt', toggle=True)
                 row.prop(kmi, "ctrl", text='Ctrl', toggle=True)
                 row.prop(kmi, "shift", text='Shift', toggle=True)
-
-
-classes = (ModalBackgroundTransform,)
-
-
-def register():
-    from bpy.utils import register_class
-
-    for cls in classes:
-        register_class(cls)
-
-
-def unregister():
-    from bpy.utils import unregister_class
-
-    for cls in reversed(classes):
-        unregister_class(cls)

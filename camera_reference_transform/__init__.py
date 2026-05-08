@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+# pyright: reportUnusedImport = false
 bl_info = {
     "name": "Reference Transforms",
     "author": "Cirno",
@@ -12,46 +14,49 @@ bl_info = {
 }
 
 
-reloadable_modules = (
-    "keymaps",
+_RELOADABLE_MODULE_NAMES = (
+    "package",
     "properties",
+    "addon_preferences",
     "preferences",
+    "keymaps",
+    "modal_utils",
     "background_move",
     "background_rotate",
     "background_scale",
+    "operators",
 )
 
-
-# when bpy is already in local, we know this is not the initial import,
-# so we need to reload our submodule(s) using importlib.
+# Support reloading submodules
 if "bpy" in locals():
     import importlib
 
-    # reload modules twice so modules that import from other modules
-    # always get stuff that's up-to-date.
-    for _ in range(2):
-        for module in reloadable_modules:
-            if module in locals():
-                importlib.reload(locals()[module])
+    for module_name in _RELOADABLE_MODULE_NAMES:
+        if module_name in locals():
+            importlib.reload(locals()[module_name])
+
 else:
-    from .operators import background_move, background_rotate, background_scale, keymaps
-    from .preferences import addon_preferences
-    from .properties import properties
+    import bpy
 
+    # Prevent imports when run in the background, since gpu shaders will not be available
+    if not bpy.app.background:
+        import operators
+        import package
+        import preferences
 
-def register():
-    properties.register()
-    preferences.register()
-    background_move.register()
-    background_rotate.register()
-    background_scale.register()
-    keymaps.register()
+        from .operators import background_move, background_rotate, background_scale, keymaps, modal_utils
+        from .preferences import addon_preferences, properties
 
+import bpy  # noqa: E402
 
-def unregister():
-    keymaps.unregister()
-    background_move.unregister()
-    background_rotate.unregister()
-    background_scale.unregister()
-    preferences.unregister()
-    properties.unregister()
+# Prevent loading in the background, since gpu shaders will not be available
+if not bpy.app.background:
+    from . import operators, preferences
+
+    def register():
+        preferences.register()
+        operators.register()
+
+    def unregister():
+        preferences.unregister()
+        operators.unregister()

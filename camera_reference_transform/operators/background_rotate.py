@@ -5,7 +5,7 @@ import bpy
 
 from camera_reference_transform import package
 
-from ...properties import properties
+from ..preferences import properties
 from . import modal_utils
 
 if TYPE_CHECKING:
@@ -104,10 +104,10 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
             self.last_mouse_x = event.mouse_region_x
 
         if event.value == 'PRESS':
-            if modal.event_match_kmi(self, event, "flip_x"):
+            if modal_utils.event_match_kmi(self, event, "flip_x"):
                 self.bg.use_flip_x = not self.bg.use_flip_x
 
-            elif modal.event_match_kmi(self, event, "flip_y"):
+            elif modal_utils.event_match_kmi(self, event, "flip_y"):
                 self.bg.use_flip_y = not self.bg.use_flip_y
 
             elif event.type in ('ESC', 'RIGHTMOUSE'):
@@ -132,20 +132,3 @@ class CAMERA_OT_background_rotate(bpy.types.Operator):
         context.area.header_text_set(text=None)
         context.workspace.status_text_set(text=None)
         context.window.cursor_modal_restore()
-
-
-classes = (CAMERA_OT_background_rotate,)
-
-
-def register():
-    from bpy.utils import register_class
-
-    for cls in classes:
-        register_class(cls)
-
-
-def unregister():
-    from bpy.utils import unregister_class
-
-    for cls in reversed(classes):
-        unregister_class(cls)
