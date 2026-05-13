@@ -1,29 +1,43 @@
-from typing import TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import bpy
 
-modal_key_items = []
-modal_key_names = {}
-for i in bpy.types.Event.bl_rna.properties["type"].enum_items.values():
-    modal_key_items.append((i.identifier, i.name, "", i.value))
-    modal_key_names[i.identifier] = i.description or i.name
+
+def _yield_event_type_enum_property_items() -> Iterable[tuple[str, str, str, int]]:
+    # https://docs.blender.org/api/current/bpy_types_enum_items/event_type_items.html
+    event_type_enum = cast(bpy.types.EnumProperty, bpy.types.Event.bl_rna.properties["type"])
+    for event_type_enum_item in event_type_enum.enum_items.values():
+        if event_type_enum_item is None:
+            continue
+        yield (
+            # https://docs.blender.org/api/current/bpy.props.html#bpy.props.EnumProperty
+            # identifier
+            event_type_enum_item.identifier,
+            # name
+            event_type_enum_item.name,
+            # description
+            "",
+            # number
+            event_type_enum_item.value,
+        )
 
 
 class ModalKeyMapItem(bpy.types.PropertyGroup):
     if TYPE_CHECKING:
         label: str
-        tag: str
         type: str
         alt: bool
         ctrl: bool
         shift: bool
     else:
+        # Label of the keymap item to draw in input field in preferences.
         label: bpy.props.StringProperty()
-        tag: bpy.props.StringProperty()
+        # Value of the keymap item, i.e. Event type.
         type: bpy.props.EnumProperty(
             name="Type",
             description="Type of event",
-            items=modal_key_items,
+            items=(*_yield_event_type_enum_property_items(),),
         )
         alt: bpy.props.BoolProperty(description="Alt key pressed", name="Alt", default=False)
         ctrl: bpy.props.BoolProperty(description="Control key pressed", name="Ctrl", default=False)

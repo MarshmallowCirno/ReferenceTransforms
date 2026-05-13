@@ -1,21 +1,19 @@
+import math
 from typing import TYPE_CHECKING, Any
 
 import bpy
 
-from camera_reference_transform import package
-
-from ..preferences import properties
-from . import modal_utils
+from camera_reference_transform import addon_info
 
 if TYPE_CHECKING:
     from bpy.stub_internal.rna_enums import OperatorReturnItems
 
 
-class CAMERA_OT_background_scale(bpy.types.Operator):
-    """Scale camera background image"""
+class CAMERA_OT_rotate_background(bpy.types.Operator):
+    """Rotate camera background image"""
 
-    bl_idname = "camera.background_scale"
-    bl_label = "Scale Camera Background"
+    bl_idname = "camera.background_rotate"
+    bl_label = "Rotate Camera Background"
     bl_options = {'REGISTER', 'UNDO', 'GRAB_CURSOR', 'BLOCKING'}
 
     @classmethod
@@ -29,16 +27,11 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
             super().__init__(*args, **kwargs)
 
         self.bg: bpy.types.CameraBackgroundImage | None = None
-
-        self.keymap_items: properties.ModalKeyMapItem = package.get_preferences().keymaps["modal"].keymap_items
-
+        self.modal_keymap_items = addon_info.get_preferences().modal_keymap_items
         self.last_mouse_x: int = 0
+        self.raw_bg_rotation: float = 0
 
-        self.bg_scale_float: float = 0
-
-        self.init_bg_scale: float = 0
-        self.init_bg_offset_x: float = 0
-        self.init_bg_offset_y: float = 0
+        self.init_bg_rotation: float = 0
         self.init_bg_flip_x: bool = False
         self.init_bg_flip_y: bool = False
 
@@ -47,17 +40,15 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
         assert cam_ob is not None and cam_ob.type == 'CAMERA'
         assert isinstance(cam_ob.data, bpy.types.Camera)
 
-        cam_backgrounds = [bg for bg in cam_ob.data.background_images if bg.image and bg.show_background_image]
-        if not any(cam_backgrounds):
+        self.bg = next((bg for bg in cam_ob.data.background_images if bg.image and bg.show_background_image), None)
+        if self.bg is None:
             self.report({'WARNING'}, "No visible backgrounds")
             return {'CANCELLED'}
 
-        self.bg = cam_backgrounds[0]
         self.last_mouse_x = event.mouse_region_x
+        self.raw_bg_rotation = self.bg.rotation
 
-        self.init_bg_scale = self.bg_scale_float = self.bg.scale
-        self.init_bg_offset_x = self.bg.offset[0]
-        self.init_bg_offset_y = self.bg.offset[1]
+        self.init_bg_rotation = self.bg.rotation
         self.init_bg_flip_x = self.bg.use_flip_x
         self.init_bg_flip_y = self.bg.use_flip_y
 
@@ -69,13 +60,25 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
 
     def redraw_status(self, context: bpy.types.Context) -> None:
         """Draw shortcuts in the status."""
-        flip_x_key = self.keymap_items["flip_x"].type
-        flip_y_key = self.keymap_items["flip_y"].type
+        flip_x_key = self.modal_keymap_items["flip_x"].type
+        flip_y_key = self.modal_keymap_items["flip_y"].type
 
         status_text = (
             f"LMB, ENTER: Confirm | RMB, ESC: Cancel | {flip_x_key}: Flip Horizontally | {flip_y_key}: Flip Vertically"
         )
         context.workspace.status_text_set(status_text)
+
+    def is_event_match_kmi(self, event: bpy.types.Event, kmi_name: str, release: bool = False) -> bool:
+        """Return match between event type and keymap item type."""
+        if release:
+            return event.type == self.modal_keymap_items[kmi_name].type
+
+        return (
+            event.type == (kmi := self.modal_keymap_items[kmi_name]).type
+            and event.alt == kmi.alt
+            and event.ctrl == kmi.ctrl
+            and event.shift == kmi.shift
+        )
 
     def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set["OperatorReturnItems"]:
         assert self.bg is not None
@@ -84,9 +87,9 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
             mouse_x = event.mouse_region_x
             mouse_offset_x = mouse_x - self.last_mouse_x
 
-            divisor = 3000 if event.shift else 300
+            divisor = 4500 if event.shift else 450
             offset = mouse_offset_x / divisor
-            self.bg_scale_float += offset
+            self.raw_bg_rotation += offset
 
             if event.ctrl or (
                 context.scene.tool_settings.use_snap
@@ -94,23 +97,21 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
                 and context.scene.tool_settings.snap_elements == 'INCREMENT'
                 and not event.ctrl
             ):
-                rounded = round(self.bg_scale_float / 0.1) * 0.1
-                if self.bg.scale != rounded:
-                    new_scale = max(rounded, 0.01)
-                    self.bg.scale = new_scale
+                rounded = math.radians(round(math.degrees(self.raw_bg_rotation) / 15) * 15)
+                if self.bg.rotation != rounded:
+                    self.bg.rotation = rounded
             else:
-                new_scale = max(self.bg_scale_float, 0.01)
-                self.bg.scale = new_scale
+                self.bg.rotation = self.raw_bg_rotation
 
-            context.area.header_text_set(f"Background Scale: {self.bg.scale:.3f}")
+            context.area.header_text_set(f"Background Rotation: {math.degrees(self.bg.rotation):.2f}°")
 
             self.last_mouse_x = event.mouse_region_x
 
         if event.value == 'PRESS':
-            if modal_utils.event_match_kmi(self, event, "flip_x"):
+            if self.is_event_match_kmi(event, "flip_x"):
                 self.bg.use_flip_x = not self.bg.use_flip_x
 
-            elif modal_utils.event_match_kmi(self, event, "flip_y"):
+            elif self.is_event_match_kmi(event, "flip_y"):
                 self.bg.use_flip_y = not self.bg.use_flip_y
 
             elif event.type in ('ESC', 'RIGHTMOUSE'):
@@ -126,9 +127,7 @@ class CAMERA_OT_background_scale(bpy.types.Operator):
 
     def undo_changes(self):
         assert self.bg is not None
-        self.bg.scale = self.init_bg_scale
-        self.bg.offset[0] = self.init_bg_offset_x
-        self.bg.offset[1] = self.init_bg_offset_y
+        self.bg.rotation = self.init_bg_rotation
         self.bg.use_flip_x = self.init_bg_flip_x
         self.bg.use_flip_y = self.init_bg_flip_y
 

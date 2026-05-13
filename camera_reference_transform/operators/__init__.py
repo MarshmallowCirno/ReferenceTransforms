@@ -1,9 +1,9 @@
-from . import background_move, background_rotate, background_scale
+from . import ot_keymap, ot_move_background, ot_rotate_background, ot_scale_background
 
 _classes = (
-    background_move.CAMERA_OT_background_move,
-    background_rotate.CAMERA_OT_background_rotate,
-    background_scale.CAMERA_OT_background_scale,
+    ot_move_background.CAMERA_OT_move_background,
+    ot_rotate_background.CAMERA_OT_rotate_background,
+    ot_scale_background.CAMERA_OT_scale_background,
 )
 
 
@@ -13,9 +13,13 @@ def register() -> None:
     for cls in _classes:
         register_class(cls)
 
+    ot_keymap.register()
+
 
 def unregister() -> None:
     from bpy.utils import unregister_class
 
     for cls in _classes:
         unregister_class(cls)
+
+    ot_keymap.unregister()

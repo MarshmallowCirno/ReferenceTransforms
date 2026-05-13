@@ -1,41 +1,36 @@
 import bpy
 
-from camera_reference_transform import package
+from camera_reference_transform import addon_info
 
-addon_keymaps: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]] = []
+object_mode_keymap: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]] = []
 
 
-def register_modal_keymap():
-    modal_keymap = package.get_preferences().keymaps.get("modal")
-    if modal_keymap is None:
-        modal_keymap = package.get_preferences().keymaps.add()
-        modal_keymap.name = "modal"
+def _populate_addon_preferences_modal_keymap():
+    keymap_items = addon_info.get_preferences().modal_keymap_items
 
-        keymap_items = modal_keymap.keymap_items
-
+    if "constraint_x" not in keymap_items:
         kmi = keymap_items.add()
         kmi.name = "constraint_x"
         kmi.label = "Constraint X"
         kmi.type = 'X'
-        kmi.tag = "Default"
 
+    if "constraint_y" not in keymap_items:
         kmi = keymap_items.add()
         kmi.name = "constraint_y"
         kmi.label = "Constraint Y"
         kmi.type = 'Y'
-        kmi.tag = "Default"
 
+    if "flip_x" not in keymap_items:
         kmi = keymap_items.add()
         kmi.name = "flip_x"
         kmi.label = "Flip Image X"
         kmi.type = 'H'
-        kmi.tag = "Default"
 
+    if "flip_y" not in keymap_items:
         kmi = keymap_items.add()
         kmi.name = "flip_y"
         kmi.label = "Flip Image Y"
         kmi.type = 'V'
-        kmi.tag = "Default"
 
 
 def register():
@@ -44,18 +39,18 @@ def register():
         km = kc.keymaps.new(name='Object Mode', space_type='EMPTY')
 
         kmi = km.keymap_items.new("camera.background_scale", 'S', 'PRESS', alt=True, ctrl=True)
-        addon_keymaps.append((km, kmi))
+        object_mode_keymap.append((km, kmi))
 
         kmi = km.keymap_items.new("camera.background_move", 'G', 'PRESS', alt=True, ctrl=True)
-        addon_keymaps.append((km, kmi))
+        object_mode_keymap.append((km, kmi))
 
         kmi = km.keymap_items.new("camera.background_rotate", 'R', 'PRESS', alt=True, ctrl=True)
-        addon_keymaps.append((km, kmi))
+        object_mode_keymap.append((km, kmi))
 
-    register_modal_keymap()
+    _populate_addon_preferences_modal_keymap()
 
 
 def unregister():
-    for km, kmi in addon_keymaps:
+    for km, kmi in object_mode_keymap:
         km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
+    object_mode_keymap.clear()

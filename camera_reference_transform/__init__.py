@@ -4,7 +4,7 @@ bl_info = {
     "name": "Reference Transforms",
     "author": "Cirno",
     "version": (1, 1),
-    "blender": (4, 0, 0),
+    "blender": (5, 1, 1),
     "location": "Shortcuts in the addon preferences",
     "description": "Adjust camera background image scale, offset and rotation",
     "warning": "",
@@ -15,15 +15,14 @@ bl_info = {
 
 
 _RELOADABLE_MODULE_NAMES = (
-    "package",
+    "addon_info",
     "properties",
     "addon_preferences",
     "preferences",
-    "keymaps",
-    "modal_utils",
-    "background_move",
-    "background_rotate",
-    "background_scale",
+    "ot_keymap",
+    "ot_move_background",
+    "ot_rotate_background",
+    "ot_scale_background",
     "operators",
 )
 
@@ -40,11 +39,8 @@ else:
 
     # Prevent imports when run in the background, since gpu shaders will not be available
     if not bpy.app.background:
-        import operators
-        import package
-        import preferences
-
-        from .operators import background_move, background_rotate, background_scale, keymaps, modal_utils
+        from . import addon_info, operators, preferences
+        from .operators import ot_keymap, ot_move_background, ot_rotate_background, ot_scale_background
         from .preferences import addon_preferences, properties
 
 import bpy  # noqa: E402

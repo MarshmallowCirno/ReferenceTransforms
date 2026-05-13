@@ -3,18 +3,22 @@ from typing import TYPE_CHECKING
 import bpy
 import rna_keymap_ui
 
-from camera_reference_transform import package
+from camera_reference_transform import addon_info
 
-from ..operators import keymaps
+from ..operators import ot_keymap
 from . import properties
 
+if TYPE_CHECKING:
+    ModalKeyMapItems = bpy.types.bpy_prop_collection_idprop[properties.ModalKeyMapItem]
 
-class ModalBackgroundTransform(bpy.types.AddonPreferences):
-    bl_idname = package.get_addon_name()
+
+class ModalBackgroundTransformPreferences(bpy.types.AddonPreferences):
+    bl_idname = addon_info.get_addon_package()
+
     if TYPE_CHECKING:
-        keymaps: bpy.types.bpy_prop_collection_idprop[properties.AddonKeyMap]
+        modal_keymap_items: bpy.types.bpy_prop_collection_idprop[properties.ModalKeyMapItem]
     else:
-        keymaps: bpy.props.CollectionProperty(type=properties.AddonKeyMap)
+        modal_keymap_items: bpy.props.CollectionProperty(type=properties.ModalKeyMapItem)
 
     def draw(self, _context: bpy.types.Context):
         layout = self.layout
@@ -30,17 +34,13 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
         box = layout.box()
         col = box.column(align=True)
         col.label(text="Shortcuts for operators:")
-        self.draw_keymap_items(col, "Object Mode", keymaps.addon_keymaps, False)
+        self.draw_keymap_items(col, "Object Mode", ot_keymap.object_mode_keymap, False)
 
         box = layout.box()
         col = box.column(align=True)
         col.label(text="Shortcuts in modal:")
-        keymap_items = self.keymaps["modal"].keymap_items
-        self.draw_modal_keymap_items(keymap_items=keymap_items, tag="Default", column=col)
-        col.separator()
-        self.draw_modal_keymap_items(keymap_items=keymap_items, tag="Mode", column=col)
-        col.separator()
-        self.draw_modal_keymap_items(keymap_items=keymap_items, tag="Reset", column=col)
+
+        self.draw_modal_keymap_items(keymap_items=self.modal_keymap_items, column=col)
 
     @staticmethod
     def draw_keymap_items(
@@ -60,16 +60,18 @@ class ModalBackgroundTransform(bpy.types.AddonPreferences):
             rna_keymap_ui.draw_kmi(['ADDON', 'USER', 'DEFAULT'], kc, km, kmi, col, 0)
 
     @staticmethod
-    def draw_modal_keymap_items(keymap_items: bpy.types.KeyMapItems, tag: str, column: bpy.types.UILayout):
+    def draw_modal_keymap_items(
+        keymap_items: "ModalKeyMapItems",
+        column: bpy.types.UILayout,
+    ):
 
         for kmi in keymap_items.values():
-            if kmi.tag == tag:
-                row = column.row()
-                row.use_property_split = True
-                row.use_property_decorate = False
-                row.prop(kmi, "type", text=kmi.label, event=True)
+            row = column.row()
+            row.use_property_split = True
+            row.use_property_decorate = False
+            row.prop(kmi, "type", text=kmi.label, event=True)
 
-                row.alignment = 'RIGHT'
-                row.prop(kmi, "alt", text='Alt', toggle=True)
-                row.prop(kmi, "ctrl", text='Ctrl', toggle=True)
-                row.prop(kmi, "shift", text='Shift', toggle=True)
+            row.alignment = 'RIGHT'
+            row.prop(kmi, "alt", text='Alt', toggle=True)
+            row.prop(kmi, "ctrl", text='Ctrl', toggle=True)
+            row.prop(kmi, "shift", text='Shift', toggle=True)

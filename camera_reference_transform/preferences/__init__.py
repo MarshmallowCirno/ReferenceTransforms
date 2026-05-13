@@ -3,7 +3,7 @@ from . import addon_preferences, properties
 _classes = (
     properties.ModalKeyMapItem,
     properties.AddonKeyMap,
-    addon_preferences.ModalBackgroundTransform,
+    addon_preferences.ModalBackgroundTransformPreferences,
 )
 
 
