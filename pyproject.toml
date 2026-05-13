@@ -34,9 +34,7 @@ line-length = 120
 [tool.ruff.format]
 quote-style = "preserve"
 
-[tool.pyright]
-include = ["camera_reference_transform"]
-exclude = ["**/__pycache__"]
+[tool.basedpyright]
 typeCheckingMode = "strict"
 reportUnknownMemberType = false
 reportMissingModuleSource = false
